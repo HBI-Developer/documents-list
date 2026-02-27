@@ -4,7 +4,7 @@
  * الأيقونة: استبدل ملف assets/images/icon.png بصورة 1024×1024 (وadaptive على أندرويد إن رغبت).
  */
 const APP_DISPLAY_NAME = 'قائمة المستندات';
-const APP_ICON_PATH = './assets/images/icon.png';
+const APP_ICON_PATH = './assets/images/favicon.png';
 
 export default {
   expo: {
@@ -17,6 +17,11 @@ export default {
     userInterfaceStyle: 'dark',
     newArchEnabled: true,
     ios: { supportsTablet: true },
+    "extra": {
+      "eas": {
+        "projectId": "4b28ce8a-4c1e-4722-bf9d-13ee7e7565d6"
+      }
+    },
     android: {
       adaptiveIcon: {
         backgroundColor: '#1a1a2e',
@@ -34,7 +39,7 @@ export default {
       [
         'expo-splash-screen',
         {
-          image: './assets/images/splash-icon.png',
+          image: './assets/images/icon.png',
           imageWidth: 200,
           resizeMode: 'contain',
           backgroundColor: '#0f0f1a',

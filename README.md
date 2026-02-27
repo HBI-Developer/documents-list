@@ -1,83 +1,89 @@
-# قائمة المستندات
+# Documents List
 
-تطبيق React Native (Expo) لإدارة قائمة مستندات مع بيانات وصفية، تخزين محلي (AsyncStorage)، واجهة عربية RTL وثيم داكن، مع ملخص إجماليات وعملات متعددة.
+A React Native (Expo) app for managing a list of documents with metadata, local storage (AsyncStorage), RTL Arabic support, a dark theme, summary totals, and multiple currencies.
 
-## تغيير اسم التطبيق والأيقونة
+## App name & icon
 
-- **الاسم:** عدّل `APP_DISPLAY_NAME` في أعلى ملف [`app.config.js`](app.config.js).
-- **الأيقونة:** استبدل الملف `assets/images/icon.png` بصورة 1024×1024، أو غيّر `APP_ICON_PATH` في `app.config.js`.
+- **Name:** Update `APP_DISPLAY_NAME` at the top of `app.config.js`.
+- **Icon:** Replace `assets/images/icon.png` with a 1024×1024 PNG, or change `APP_ICON_PATH` in `app.config.js`.
 
-## تشغيل المشروع (مهم مع pnpm)
+## Running the project (pnpm recommended)
 
-شغّل التطبيق من **التثبيت المحلي** داخل المشروع، وليس عبر `pnpm dlx`:
+Run the project from the local repository (do not use `pnpm dlx`):
 
 ```bash
 pnpm install
 pnpm run start
-# أو مع مسح الكاش: pnpm run start:clear
+# or to clear Metro cache:
+pnpm run start:clear
 ```
 
-لا تستخدم `pnpm dlx expo start` — لأن ذلك يشغّل Expo من كاش pnpm خارج المشروع، فيحاول Metro قراءة ملفات من هناك ويظهر خطأ "Failed to get the SHA-1" (الملف غير مُراقَب).
+Avoid using `pnpm dlx expo start` because that runs Expo from pnpm's global cache, which can cause Metro to read files outside the project and produce the "Failed to get the SHA-1" (untracked file) error.
 
-## إذا ظهر خطأ EXPO_ROUTER_APP_ROOT على أندرويد
+If you prefer npm/yarn you can use the equivalent commands:
 
-المشروع يستخدم نقطة دخول مخصصة (`index.js`) لتجنب هذا الخطأ. إذا استمر:
+```bash
+npm install
+npm run start
+```
 
-1. أوقف خادم Metro (Ctrl+C).
-2. شغّل مع مسح الكاش: `pnpm run start:clear` أو `npx expo start --clear`.
-3. إن كنت تبني التطبيق محلياً (وليس Expo Go)، أعد البناء: `npx expo run:android`.
+## Troubleshooting: EXPO_ROUTER_APP_ROOT on Android
 
-## إذا ظهر خطأ "Failed to get the SHA-1" (الملف غير مُراقَب)
+This project uses a custom entry (`index.js`) to avoid the `EXPO_ROUTER_APP_ROOT` error. If you still see the error:
 
-الأسباب المحتملة والمعالجة:
+1. Stop Metro (Ctrl+C).
+2. Start with a cleared cache: `pnpm run start:clear` or `npx expo start --clear`.
+3. If you're building a local binary (not using Expo Go), rebuild the app: `npx expo run:android`.
 
-1. **الملف خارج المشروع (غير مُراقَب)** — غالباً بسبب تشغيل Expo عبر `pnpm dlx`. الحل: استخدم `pnpm run start` أو `pnpm exec expo start` بعد `pnpm install` داخل مجلد المشروع.
-2. **blockList** — تأكد أن `metro.config.js` لا يستبعد مسار المشروع أو `node_modules`.
-3. **الملف حُذف أو الكاش قديم** — جرّب: أوقف Metro، ثم `pnpm run start:clear` ثم أعد فتح التطبيق.
+## Troubleshooting: "Failed to get the SHA-1" (untracked file)
+
+Common causes and fixes:
+
+1. File outside the project (untracked): Often caused by running Expo via `pnpm dlx`. Start Metro from the project using `pnpm run start` or `pnpm exec expo start` after `pnpm install`.
+2. `blockList` in Metro config: Ensure `metro.config.js` does not exclude the project path or `node_modules`.
+3. Deleted file or stale cache: Stop Metro, run `pnpm run start:clear`, then restart.
 
 ## Get started
 
 1. Install dependencies
 
-   ```bash
-   npm install
-   ```
+```bash
+pnpm install
+```
 
 2. Start the app
 
-   ```bash
-   npx expo start
-   ```
+```bash
+pnpm run start
+```
 
-In the output, you'll find options to open the app in a
+The Metro output provides options to open the app in:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- a development build
+- an Android emulator
+- an iOS simulator
+- Expo Go (limited sandbox)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+You can start developing by editing files in the `app` directory. This project uses file-based routing via Expo Router.
 
-## Get a fresh project
+## Reset project
 
-When you're ready, run:
+To create a fresh starter layout, run:
 
 ```bash
 npm run reset-project
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+This moves the current starter code to `app-example` and creates a blank `app` directory for new development.
 
 ## Learn more
 
-To learn more about developing your project with Expo, look at the following resources:
+Helpful resources:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Expo docs: https://docs.expo.dev/
+- Expo Router: https://docs.expo.dev/router/introduction/
 
-## Join the community
+## Community
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Expo on GitHub: https://github.com/expo/expo
+- Expo Discord: https://chat.expo.dev

@@ -1,11 +1,11 @@
 import { useCallback, useState } from "react";
 import {
-    Alert,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useDocuments } from "../context/DocumentsContext";
 import { colors } from "../theme/colors";
@@ -96,7 +96,7 @@ export function DocumentGrid({
       multiSelectMode,
       selectedIds,
       toggleSelect,
-    ]
+    ],
   );
 
   const keyExtractor = useCallback((item: DocumentItem) => item.id, []);
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
-    marginBottom: spacing.sm,
+    marginBlock: spacing.md,
   },
   toolbarBtn: {
     paddingVertical: spacing.sm,

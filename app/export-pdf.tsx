@@ -7,10 +7,12 @@ import { formatDateDisplay } from "@/src/utils/date";
 import * as Print from "expo-print";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system/legacy";
 import { useCallback, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Platform,
     ScrollView,
     StyleSheet,
     Switch,
@@ -121,14 +123,43 @@ export default function ExportPdfScreen() {
       const { uri } = await Print.printToFileAsync({
         html,
       });
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(uri, {
-          mimeType: "application/pdf",
-          dialogTitle: "حفظ أو مشاركة PDF",
+
+      if (Platform.OS === "android") {
+        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+        if (!permissions.granted) {
+          return;
+        }
+
+        const base64Data = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
         });
+
+        const dateStr = new Date().toISOString().split("T")[0].replace(/-/g, "_");
+        const fileName = `قائمة_المستندات_${dateStr}`;
+
+        const safUri = await FileSystem.StorageAccessFramework.createFileAsync(
+          permissions.directoryUri,
+          fileName,
+          "application/pdf"
+        );
+
+        await FileSystem.StorageAccessFramework.writeAsStringAsync(
+          safUri,
+          base64Data,
+          { encoding: FileSystem.EncodingType.Base64 }
+        );
+
+        Alert.alert("تم الحفظ", "تم حفظ ملف PDF بنجاح في المجلد المحدد.");
       } else {
-        Alert.alert("تم", "تم إنشاء الملف بنجاح.");
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(uri, {
+            mimeType: "application/pdf",
+            dialogTitle: "حفظ أو مشاركة PDF",
+          });
+        } else {
+          Alert.alert("تم", "تم إنشاء الملف بنجاح.");
+        }
       }
       router.back();
     } catch (e) {

@@ -77,12 +77,28 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     await store.setDocuments(list);
   }, []);
 
+  /**
+   * Ensures every document has a unique, contiguous order starting at 1.
+   * Sorts by current order then reassigns 1, 2, 3, …
+   */
+  const reindex = (list: DocumentItem[]): DocumentItem[] =>
+    [...list]
+      .sort((a, b) => a.order - b.order)
+      .map((d, i) => ({ ...d, order: i + 1 }));
+
   const addDocument = useCallback(
     async (input: DocumentInput): Promise<DocumentItem> => {
+      const targetOrder = input.order;
+
+      // Shift all existing documents whose order >= targetOrder up by 1
+      const shifted = documents.map((d) =>
+        d.order >= targetOrder ? { ...d, order: d.order + 1 } : d
+      );
+
       const doc: DocumentItem = {
         ...defaultDoc(),
         id: nanoid(),
-        order: input.order,
+        order: targetOrder,
         name: input.name,
         date: input.date,
         numberOfPages: input.numberOfPages,
@@ -91,38 +107,54 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         fixedAmount: input.fixedAmount,
         disabled: false,
       } as DocumentItem;
-      const list = [...documents, doc].sort((a, b) => a.order - b.order);
+
+      // Re-index to guarantee a clean 1-based contiguous sequence
+      const list = reindex([...shifted, doc]);
       await persist(list);
-      return doc;
+      return list.find((d) => d.id === doc.id)!;
     },
     [documents, persist]
   );
 
   const updateDocument = useCallback(
     async (id: string, input: DocumentInput) => {
-      const list = documents.map((d) =>
-        d.id === id
-          ? {
-              ...d,
-              order: input.order,
-              name: input.name,
-              date: input.date,
-              numberOfPages: input.numberOfPages,
-              calculationMethod: input.calculationMethod,
-              valuePerPage: input.valuePerPage,
-              fixedAmount: input.fixedAmount,
-            }
-          : d
-      );
-      list.sort((a, b) => a.order - b.order);
-      await persist(list);
+      const targetOrder = input.order;
+      const oldOrder = documents.find((d) => d.id === id)?.order ?? targetOrder;
+
+      let updated = documents.map((d) => {
+        if (d.id === id) {
+          // The document being edited gets its new order
+          return {
+            ...d,
+            order: targetOrder,
+            name: input.name,
+            date: input.date,
+            numberOfPages: input.numberOfPages,
+            calculationMethod: input.calculationMethod,
+            valuePerPage: input.valuePerPage,
+            fixedAmount: input.fixedAmount,
+          };
+        }
+        // Moving DOWN (e.g. 3 → 7): shift docs in range (oldOrder, targetOrder] up by -1
+        if (targetOrder > oldOrder && d.order > oldOrder && d.order <= targetOrder) {
+          return { ...d, order: d.order - 1 };
+        }
+        // Moving UP (e.g. 7 → 3): shift docs in range [targetOrder, oldOrder) down by +1
+        if (targetOrder < oldOrder && d.order >= targetOrder && d.order < oldOrder) {
+          return { ...d, order: d.order + 1 };
+        }
+        return d;
+      });
+
+      // Re-index to guarantee a clean 1-based contiguous sequence
+      await persist(reindex(updated));
     },
     [documents, persist]
   );
 
   const deleteDocument = useCallback(
     async (id: string) => {
-      await persist(documents.filter((d) => d.id !== id));
+      await persist(reindex(documents.filter((d) => d.id !== id)));
     },
     [documents, persist]
   );
@@ -130,7 +162,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
   const deleteDocuments = useCallback(
     async (ids: string[]) => {
       const set = new Set(ids);
-      await persist(documents.filter((d) => !set.has(d.id)));
+      await persist(reindex(documents.filter((d) => !set.has(d.id))));
     },
     [documents, persist]
   );

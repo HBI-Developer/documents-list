@@ -6,8 +6,10 @@ import { formatAmount } from "@/src/utils/calculations";
 import { todayISO } from "@/src/utils/date";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+    Animated,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -37,7 +39,7 @@ export default function DocumentEditorScreen() {
   const [calculationMethod, setCalculationMethod] = useState<
     "multiply" | "fixed"
   >(lastCalculationMethod);
-  const [valuePerPage, setValuePerPage] = useState("");
+  const [valuePerPage, setValuePerPage] = useState("10");
   const [fixedAmount, setFixedAmount] = useState("");
 
   const nameRef = useRef<TextInput>(null);
@@ -45,13 +47,55 @@ export default function DocumentEditorScreen() {
   const valueRef = useRef<TextInput>(null);
   const fixedRef = useRef<TextInput>(null);
 
-  const resetForm = useCallback(() => {
+  // Validation banner state
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showBanner, setShowBanner] = useState(false);
+  const bannerSlide = useRef(new Animated.Value(-120)).current;
+  const bannerTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showValidationBanner = useCallback((errors: string[]) => {
+    if (bannerTimeout.current) clearTimeout(bannerTimeout.current);
+    setValidationErrors(errors);
+    setShowBanner(true);
+    bannerSlide.setValue(-120);
+    Animated.spring(bannerSlide, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 10,
+    }).start();
+    bannerTimeout.current = setTimeout(() => {
+      Animated.timing(bannerSlide, {
+        toValue: -120,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setShowBanner(false));
+    }, 4000);
+  }, [bannerSlide]);
+
+  useEffect(() => {
+    return () => { if (bannerTimeout.current) clearTimeout(bannerTimeout.current); };
+  }, []);
+
+  const validateFields = useCallback((): string[] => {
+    const errors: string[] = [];
+    if (!order.trim()) errors.push("الترتيب");
+    if (!name.trim()) errors.push("الاسم");
+    if (!numberOfPages.trim()) errors.push("عدد الصفحات");
+    if (calculationMethod === "multiply" && !valuePerPage.trim()) errors.push("القيمة لكل صفحة");
+    if (calculationMethod === "fixed" && !fixedAmount.trim()) errors.push("المبلغ الثابت");
+    return errors;
+  }, [order, name, numberOfPages, calculationMethod, valuePerPage, fixedAmount]);
+
+  const resetForm = useCallback((keepDate: boolean = false) => {
     setOrder(String(documents.length + 1));
     setName("");
-    setDate(new Date());
+    if (!keepDate) {
+      setDate(new Date());
+    }
     setNumberOfPages("");
     setCalculationMethod(lastCalculationMethod);
-    setValuePerPage("");
+    setValuePerPage("10");
     setFixedAmount("");
   }, [documents.length, lastCalculationMethod]);
 
@@ -67,6 +111,7 @@ export default function DocumentEditorScreen() {
     } else {
       setOrder(String(documents.length + 1));
       setCalculationMethod(lastCalculationMethod);
+      setValuePerPage("10");
     }
   }, [editDocument, documents.length, lastCalculationMethod]);
 
@@ -90,6 +135,9 @@ export default function DocumentEditorScreen() {
   };
 
   const submit = useCallback(async () => {
+    const errors = validateFields();
+    if (errors.length > 0) { showValidationBanner(errors); return; }
+
     const orderNum = Math.max(1, parseInt(order, 10) || 1);
     const input: DocumentInput = {
       order: orderNum,
@@ -147,6 +195,9 @@ export default function DocumentEditorScreen() {
   };
 
   const submitAndContinue = useCallback(async () => {
+    const errors = validateFields();
+    if (errors.length > 0) { showValidationBanner(errors); return; }
+
     const orderNum = Math.max(1, parseInt(order, 10) || 1);
     const input: DocumentInput = {
       order: orderNum,
@@ -161,7 +212,7 @@ export default function DocumentEditorScreen() {
     await setLastCalculationMethod(calculationMethod);
     
     // Reset form but increment order for the next one
-    resetForm();
+    resetForm(true);
     setOrder(String(documents.length + 2)); 
     setTimeout(() => nameRef.current?.focus(), 100);
   }, [
@@ -180,6 +231,28 @@ export default function DocumentEditorScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Validation banner — slides down from top */}
+      {showBanner && (
+        <Animated.View
+          style={[
+            styles.validationBanner,
+            { transform: [{ translateY: bannerSlide }] },
+          ]}
+          pointerEvents="none"
+        >
+          <View style={styles.validationBannerHeader}>
+            <Ionicons name="alert-circle" size={18} color={colors.error} />
+            <Text style={styles.validationBannerTitle}>الحقول التالية مطلوبة</Text>
+          </View>
+          {validationErrors.map((err) => (
+            <View key={err} style={styles.validationBannerRow}>
+              <Text style={styles.validationBannerBullet}>•</Text>
+              <Text style={styles.validationBannerItem}>{err}</Text>
+            </View>
+          ))}
+        </Animated.View>
+      )}
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -431,4 +504,50 @@ const styles = StyleSheet.create({
   },
   continueBtn: { backgroundColor: colors.primaryDim },
   primaryBtnText: { fontSize: 16, fontWeight: "600", color: "#fff" },
+  validationBanner: {
+    position: "absolute",
+    top: 0,
+    left: spacing.lg,
+    right: spacing.lg,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.error,
+    borderRadius: 12,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    zIndex: 9999,
+    gap: 6,
+    shadowColor: colors.error,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 10,
+    marginTop: spacing.md,
+  },
+  validationBannerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: 4,
+  },
+  validationBannerTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.error,
+  },
+  validationBannerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  validationBannerBullet: {
+    fontSize: 14,
+    color: colors.error,
+    lineHeight: 20,
+  },
+  validationBannerItem: {
+    fontSize: 13,
+    color: colors.text,
+    lineHeight: 20,
+  },
 });

@@ -14,7 +14,7 @@ A React Native (Expo) application for managing a list of documents with metadata
 - RTL layout support for Arabic.
 - Light and dark themes with customizable colors.
 - Summary totals and currency-based filtering.
-- Export documents to PDF.
+- Exporting documents list on a table in PDF file.
 
 **Requirements**:
 
@@ -52,9 +52,6 @@ npm run start
 - Avoid running `pnpm dlx expo start` — it can cause Metro to read files outside the project and produce the "Failed to get the SHA-1" (untracked file) error.
 - The project uses a custom entry (`index.js`) to avoid the `EXPO_ROUTER_APP_ROOT` error on Android; if you still see it, restart Metro after clearing the cache.
 
-**Project icon**:
-The file `favicon.png` in the project root is shown above. Replace it with a square 1024×1024 PNG for better quality when used as an app icon.
-
 **License**:
 This project is licensed under the Apache License 2.0 — see [LICENSE](LICENSE) for details.
 
@@ -67,5 +64,3 @@ This project is licensed under the Apache License 2.0 — see [LICENSE](LICENSE)
 
 - Expo docs: https://docs.expo.dev/
 - Expo Router: https://docs.expo.dev/router/introduction/
-
-If you'd like, I can add a short English summary file or adjust the icon path to a different location.

@@ -124,15 +124,15 @@ management, and PDF export in one place.
 
 ## 🖼️ Screenshots
 
-<p align="center">
-  <img src="./assets/screenshots/home.jpg" width="220" alt="الشاشة الرئيسية — Home Screen" />
-  &nbsp;&nbsp;
-  <img src="./assets/screenshots/grid.jpg" width="220" alt="شبكة المستندات — Document Grid" />
-  &nbsp;&nbsp;
-  <img src="./assets/screenshots/editor.jpg" width="220" alt="محرر المستند — Document Editor" />
-  &nbsp;&nbsp;
-  <img src="./assets/screenshots/export.jpg" width="220" alt="تصدير PDF — PDF Export" />
-</p>
+|                  Home Screen                  |                  Documents Details                  |
+| :-------------------------------------------: | :-------------------------------------------------: |
+| ![Home Screen](./assets/screenshots/home.jpg) | ![Documents Details](./assets/screenshots/grid.jpg) |
+|         _Home Screen for Application_         | _Screen displaying and sorting the recorded files_  |
+
+|                        Document Editor                        |                           Export PDF                           |
+| :-----------------------------------------------------------: | :------------------------------------------------------------: |
+|      ![Document Editor](./assets/screenshots/editor.jpg)      |         ![Export PDF](./assets/screenshots/export.jpg)         |
+| _Document editor screen for adding or editing a new document_ | _Screen for exporting documents to a PDF file in table format_ |
 
 ---
 
@@ -167,34 +167,34 @@ management, and PDF export in one place.
 ## 🏗️ Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                     App Entry (index.js)                     │
-├──────────────────────────────────────────────────────────────┤
-│                      app/_layout.tsx                         │
-│    ┌─────────────┬──────────────┬──────────────┬──────────┐  │
-│    │  Settings   │  Currencies  │  Deductions  │Documents │  │
-│    │  Provider   │  Provider    │  Provider    │ Provider │  │
-│    └─────────────┴──────────────┴──────────────┴──────────┘  │
-│                       Providers                              │
-├──────────────────────────────────────────────────────────────┤
-│   ┌──────────────────────────────────────────────────────┐   │
-│   │                   Tab Navigator                      │   │
-│   │   ┌──────────┐  ┌────────────────────────────────┐   │   │
-│   │   │   Home   │  │   Explore (reserved)           │   │   │
-│   │   └──────────┘  └────────────────────────────────┘   │   │
-│   └──────────────────────────────────────────────────────┘   │
+┌───────────────────────────────────────────────────────────────┐
+│                     App Entry (index.js)                      │
+├───────────────────────────────────────────────────────────────┤
+│                      app/_layout.tsx                          │
+│    ┌─────────────┬──────────────┬──────────────┬───────────┐  │
+│    │  Settings   │  Currencies  │  Deductions  │ Documents │  │
+│    │  Provider   │  Provider    │  Provider    │  Provider │  │
+│    └─────────────┴──────────────┴──────────────┴───────────┘  │
+│                       Providers                               │
+├───────────────────────────────────────────────────────────────┤
+│   ┌──────────────────────────────────────────────────────┐    │
+│   │                   Tab Navigator                      │    │
+│   │   ┌──────────┐  ┌────────────────────────────────┐   │    │
+│   │   │   Home   │  │   Explore (reserved)           │   │    │
+│   │   └──────────┘  └────────────────────────────────┘   │    │
+│   └──────────────────────────────────────────────────────┘    │
 │                    Screens / Modals                           │
-│   ┌────────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│   │ Document   │  │ Currency │  │Deductions│  │  Export   │  │
-│   │ Editor     │  │ Settings │  │          │  │   PDF    │  │
-│   │ (modal)    │  │ (modal)  │  │ (modal)  │  │ (modal)  │  │
-│   └────────────┘  └──────────┘  └──────────┘  └──────────┘  │
-└──────────────────────────────────────────────────────────────┘
+│   ┌────────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│   │ Document   │  │ Currency │  │Deductions│  │  Export  │    │
+│   │ Editor     │  │ Settings │  │          │  │   PDF    │    │
+│   │ (modal)    │  │ (modal)  │  │ (modal)  │  │ (modal)  │    │
+│   └────────────┘  └──────────┘  └──────────┘  └──────────┘    │
+└───────────────────────────────────────────────────────────────┘
           ↓                   ↓                    ↓
-┌──────────────────────────────────────────────────────────────┐
-│               AsyncStorage (persistence layer)               │
-│    Documents   │   Currencies   │   Settings   │  Deductions │
-└──────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│               AsyncStorage (persistence layer)                │
+│    Documents   │   Currencies   │   Settings   │  Deductions  │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 > **Data flow:** Four context providers are loaded in dependency order — `SettingsProvider` → `CurrenciesProvider` → `DeductionsProvider` → `DocumentsProvider` — all inside a `ThemeProvider` that enforces the dark color scheme. Data flows unidirectionally: screens read from context, mutations pass through the provider to AsyncStorage, and re-renders propagate automatically.

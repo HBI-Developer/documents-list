@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@react-native-vector-icons/ionicons";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SummarySection } from "../components/SummarySection";
@@ -13,6 +13,7 @@ export function HomeScreen() {
       <SummarySection
         onOpenCurrencySettings={() => router.push("/currency-settings")}
         onOpenDeductions={() => router.push("/deductions")}
+        onOpenDatabase={() => router.push("/database")}
         onExportPdf={() => router.push("/export-pdf")}
       />
 
@@ -25,10 +26,7 @@ export function HomeScreen() {
           <Text style={styles.detailsBtnText}>تفاصيل المستندات</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => router.push("/document-editor")}
-        >
+        <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/document-editor")}>
           <Ionicons name="add-circle" size={24} color="#fff" />
           <Text style={styles.addBtnText}>إضافة مستند جديد</Text>
         </TouchableOpacity>

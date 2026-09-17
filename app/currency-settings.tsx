@@ -1,25 +1,24 @@
+import { useCallback, useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCurrencies } from "@/src/context/CurrenciesContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors } from "@/src/theme/colors";
 import { spacing } from "@/src/theme/spacing";
 import type { CurrencyItem } from "@/src/utils/calculations";
-import { useCallback, useState } from "react";
-import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function CurrencySettingsScreen() {
   const insets = useSafeAreaInsets();
   const { primaryCurrencyName, setPrimaryCurrencyName } = useSettings();
-  const { additionalCurrencies, addCurrency, updateCurrency, deleteCurrency } =
-    useCurrencies();
+  const { additionalCurrencies, addCurrency, updateCurrency, deleteCurrency } = useCurrencies();
 
   const [primaryName, setPrimaryName] = useState(primaryCurrencyName);
   const [newName, setNewName] = useState("");
@@ -37,7 +36,7 @@ export default function CurrencySettingsScreen() {
 
   const handleAddCurrency = useCallback(async () => {
     const name = newName.trim();
-    const rate = parseFloat(newRate);
+    const rate = Number.parseFloat(newRate);
     if (!name) return;
     if (!Number.isFinite(rate) || rate <= 0) {
       Alert.alert("خطأ", "أدخل نسبة تحويل صحيحة (عدد موجب)");
@@ -66,7 +65,7 @@ export default function CurrencySettingsScreen() {
   const handleSaveEdit = useCallback(async () => {
     if (!editingId) return;
     const name = editName.trim();
-    const rate = parseFloat(editRate);
+    const rate = Number.parseFloat(editRate);
     if (!name || !Number.isFinite(rate) || rate <= 0) {
       Alert.alert("خطأ", "الاسم ونسبة التحويل مطلوبان (عدد موجب)");
       return;
@@ -90,17 +89,14 @@ export default function CurrencySettingsScreen() {
         },
       ]);
     },
-    [deleteCurrency]
+    [deleteCurrency],
   );
 
   return (
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 20 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
       >
         <Text style={styles.sectionTitle}>العملة الأساسية</Text>
         <Text style={styles.label}>اسم العملة</Text>
@@ -139,49 +135,27 @@ export default function CurrencySettingsScreen() {
                 </View>
                 <View style={styles.opRow}>
                   <TouchableOpacity
-                    style={[
-                      styles.opBtn,
-                      editOp === "multiply" && styles.opBtnActive,
-                    ]}
+                    style={[styles.opBtn, editOp === "multiply" && styles.opBtnActive]}
                     onPress={() => setEditOp("multiply")}
                   >
-                    <Text
-                      style={[
-                        styles.opText,
-                        editOp === "multiply" && styles.opTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.opText, editOp === "multiply" && styles.opTextActive]}>
                       أقل قيمة (ضرب)
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[
-                      styles.opBtn,
-                      editOp === "divide" && styles.opBtnActive,
-                    ]}
+                    style={[styles.opBtn, editOp === "divide" && styles.opBtnActive]}
                     onPress={() => setEditOp("divide")}
                   >
-                    <Text
-                      style={[
-                        styles.opText,
-                        editOp === "divide" && styles.opTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.opText, editOp === "divide" && styles.opTextActive]}>
                       أعلى قيمة (قسمة)
                     </Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={styles.smallBtn}
-                    onPress={handleSaveEdit}
-                  >
+                  <TouchableOpacity style={styles.smallBtn} onPress={handleSaveEdit}>
                     <Text style={styles.smallBtnText}>حفظ</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.smallBtn}
-                    onPress={cancelEdit}
-                  >
+                  <TouchableOpacity style={styles.smallBtn} onPress={cancelEdit}>
                     <Text style={styles.smallBtnText}>إلغاء</Text>
                   </TouchableOpacity>
                 </View>
@@ -196,10 +170,7 @@ export default function CurrencySettingsScreen() {
                   </Text>
                 </View>
                 <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={styles.smallBtn}
-                    onPress={() => startEdit(c)}
-                  >
+                  <TouchableOpacity style={styles.smallBtn} onPress={() => startEdit(c)}>
                     <Text style={styles.smallBtnText}>تعديل</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -236,12 +207,7 @@ export default function CurrencySettingsScreen() {
               style={[styles.opBtn, newOp === "multiply" && styles.opBtnActive]}
               onPress={() => setNewOp("multiply")}
             >
-              <Text
-                style={[
-                  styles.opText,
-                  newOp === "multiply" && styles.opTextActive,
-                ]}
-              >
+              <Text style={[styles.opText, newOp === "multiply" && styles.opTextActive]}>
                 أقل قيمة (ضرب)
               </Text>
             </TouchableOpacity>
@@ -249,9 +215,7 @@ export default function CurrencySettingsScreen() {
               style={[styles.opBtn, newOp === "divide" && styles.opBtnActive]}
               onPress={() => setNewOp("divide")}
             >
-              <Text
-                style={[styles.opText, newOp === "divide" && styles.opTextActive]}
-              >
+              <Text style={[styles.opText, newOp === "divide" && styles.opTextActive]}>
                 أعلى قيمة (قسمة)
               </Text>
             </TouchableOpacity>

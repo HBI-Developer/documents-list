@@ -9,18 +9,23 @@ export default {
   expo: {
     name: APP_DISPLAY_NAME,
     slug: "documents-list",
-    version: "1.0.1",
+    version: "2.0.0",
     orientation: "portrait",
     scheme: "documentslist",
-    userInterfaceStyle: "dark",
-    newArchEnabled: true,
-    ios: { supportsTablet: true, icon: "./assets/images/ios-icon-default.png" },
+    userInterfaceStyle: "automatic",
+    backgroundColor: "#0f0f1a",
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: "com.howar.documentslist",
+      icon: "./assets/images/ios-icon-default.png",
+    },
     extra: {
       eas: {
         projectId: "4b28ce8a-4c1e-4722-bf9d-13ee7e7565d6",
       },
     },
     android: {
+      backgroundColor: "#0f0f1a",
       adaptiveIcon: {
         backgroundColor: "#1a1a2e",
         foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -28,12 +33,21 @@ export default {
         monochromeImage: "./assets/images/android-icon-monochrome.png",
       },
       package: "com.howar.documentslist",
-      edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
     },
-    web: { output: "static", favicon: "./assets/images/favicon.png" },
+    web: {
+      output: "static",
+      favicon: "./assets/images/favicon.png",
+      backgroundColor: "#0f0f1a",
+    },
     plugins: [
       "expo-router",
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-image",
+      "expo-sharing",
+      "expo-web-browser",
+      "expo-status-bar",
       [
         "expo-splash-screen",
         {

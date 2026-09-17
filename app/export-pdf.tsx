@@ -1,26 +1,26 @@
+import { Directory, File } from "expo-file-system";
+import * as Print from "expo-print";
+import { useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
+import { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDocuments } from "@/src/context/DocumentsContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors } from "@/src/theme/colors";
 import { spacing } from "@/src/theme/spacing";
 import { formatAmount, getDocumentAmount } from "@/src/utils/calculations";
 import { formatDateDisplay } from "@/src/utils/date";
-import * as Print from "expo-print";
-import { useRouter } from "expo-router";
-import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system/legacy";
-import { useCallback, useState } from "react";
-import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type ExportColumnKey = "serial" | "date" | "pages" | "amount";
 
@@ -33,10 +33,11 @@ const COLUMN_LABELS: Record<ExportColumnKey, string> = {
 
 function escapeHtml(s: string): string {
   return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#x27;");
 }
 
 export default function ExportPdfScreen() {
@@ -44,7 +45,7 @@ export default function ExportPdfScreen() {
   const insets = useSafeAreaInsets();
   const { documents } = useDocuments();
   const { primaryCurrencyName } = useSettings();
-  
+
   const [includeSerial, setIncludeSerial] = useState(true);
   const [includeDate, setIncludeDate] = useState(true);
   const [includePages, setIncludePages] = useState(true);
@@ -59,21 +60,16 @@ export default function ExportPdfScreen() {
     if (includeSerial) cols.unshift({ key: "serial", label: "م" });
     if (includeDate) cols.push({ key: "date", label: "التاريخ" });
     if (includePages) cols.push({ key: "pages", label: "عدد الصفحات" });
-    if (includeAmount)
-      cols.push({ key: "amount", label: `المبلغ (${primaryCurrencyName})` });
+    if (includeAmount) cols.push({ key: "amount", label: `المبلغ (${primaryCurrencyName})` });
 
-    const headerCells = cols
-      .map((c) => `<th>${escapeHtml(c.label)}</th>`)
-      .join("");
+    const headerCells = cols.map((c) => `<th>${escapeHtml(c.label)}</th>`).join("");
     const rows = sorted.map((doc, i) => {
       const cells = cols.map((c) => {
         if (c.key === "serial") return `<td>${i + 1}</td>`;
         if (c.key === "name") return `<td>${escapeHtml(doc.name || "—")}</td>`;
-        if (c.key === "date")
-          return `<td>${escapeHtml(formatDateDisplay(doc.date))}</td>`;
+        if (c.key === "date") return `<td>${escapeHtml(formatDateDisplay(doc.date))}</td>`;
         if (c.key === "pages") return `<td>${doc.numberOfPages}</td>`;
-        if (c.key === "amount")
-          return `<td>${formatAmount(getDocumentAmount(doc))}</td>`;
+        if (c.key === "amount") return `<td>${formatAmount(getDocumentAmount(doc))}</td>`;
         return "<td></td>";
       });
       return `<tr>${cells.join("")}</tr>`;
@@ -103,14 +99,7 @@ export default function ExportPdfScreen() {
   </table>
 </body>
 </html>`;
-  }, [
-    documents,
-    primaryCurrencyName,
-    includeSerial,
-    includeDate,
-    includePages,
-    includeAmount,
-  ]);
+  }, [documents, primaryCurrencyName, includeSerial, includeDate, includePages, includeAmount]);
 
   const handleExport = useCallback(async () => {
     if (documents.length === 0) {
@@ -125,29 +114,21 @@ export default function ExportPdfScreen() {
       });
 
       if (Platform.OS === "android") {
-        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-        if (!permissions.granted) {
+        let directory: Directory;
+        try {
+          directory = await Directory.pickDirectoryAsync();
+        } catch {
+          // User cancelled the folder picker — stay on screen, no error.
           return;
         }
 
-        const base64Data = await FileSystem.readAsStringAsync(uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, "0")}_${String(now.getDate()).padStart(2, "0")}`;
+        const fileName = `قائمة_المستندات_${dateStr}.pdf`;
 
-        const dateStr = new Date().toISOString().split("T")[0].replace(/-/g, "_");
-        const fileName = `قائمة_المستندات_${dateStr}`;
-
-        const safUri = await FileSystem.StorageAccessFramework.createFileAsync(
-          permissions.directoryUri,
-          fileName,
-          "application/pdf"
-        );
-
-        await FileSystem.StorageAccessFramework.writeAsStringAsync(
-          safUri,
-          base64Data,
-          { encoding: FileSystem.EncodingType.Base64 }
-        );
+        const source = new File(uri);
+        const destination = directory.createFile(fileName, "application/pdf");
+        destination.write(await source.bytes());
 
         Alert.alert("تم الحفظ", "تم حفظ ملف PDF بنجاح في المجلد المحدد.");
       } else {
@@ -163,10 +144,7 @@ export default function ExportPdfScreen() {
       }
       router.back();
     } catch (e) {
-      Alert.alert(
-        "خطأ",
-        "فشل إنشاء PDF. " + (e instanceof Error ? e.message : String(e))
-      );
+      Alert.alert("خطأ", `فشل إنشاء PDF. ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setLoading(false);
     }
@@ -176,10 +154,7 @@ export default function ExportPdfScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 20 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
       >
         <Text style={styles.hint}>
           اختر الأعمدة التي تريد إدراجها في ملف PDF. الاسم إلزامي دائماً.

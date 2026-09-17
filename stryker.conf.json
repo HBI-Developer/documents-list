@@ -1,0 +1,13 @@
+{
+  "$schema": "https://stryker-mutator.io/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "vitest": { "related": false },
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "coverageAnalysis": "perTest",
+  "mutate": ["src/utils/calculations.ts", "src/utils/databaseBackup.ts"],
+  "thresholds": { "high": 80, "low": 60, "break": 60 },
+  "reporters": ["progress", "html"],
+  "cleanTempDir": true,
+  "ignorePatterns": ["node_modules", ".expo", "web-build", "reports"],
+  "timeoutMS": 10000
+}

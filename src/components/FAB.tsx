@@ -1,11 +1,11 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@react-native-vector-icons/ionicons";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 
 interface FABProps {
-  onPress: () => void;
+  readonly onPress: () => void;
 }
 
 export function FAB({ onPress }: FABProps) {

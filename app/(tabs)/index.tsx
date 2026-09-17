@@ -1,6 +1,6 @@
+import { StyleSheet, Text, View } from "react-native";
 import { HomeScreen } from "@/src/screens/HomeScreen";
 import { colors } from "@/src/theme/colors";
-import { StyleSheet, Text, View } from "react-native";
 
 export default function TabIndex() {
   return (

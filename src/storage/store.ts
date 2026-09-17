@@ -5,6 +5,7 @@ const KEYS = {
   currencies: "currencies",
   settings: "settings",
   deductions: "deductions",
+  viewMode: "documentViewMode",
 } as const;
 
 export async function getDocuments(): Promise<unknown[]> {
@@ -71,4 +72,19 @@ export async function getDeductions(): Promise<DeductionItem[]> {
 
 export async function setDeductions(data: DeductionItem[]): Promise<void> {
   await AsyncStorage.setItem(KEYS.deductions, JSON.stringify(data));
+}
+
+export type DocumentViewMode = "grid" | "list";
+
+export async function getViewMode(): Promise<DocumentViewMode | null> {
+  try {
+    const raw = await AsyncStorage.getItem(KEYS.viewMode);
+    return raw === "grid" || raw === "list" ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setViewMode(mode: DocumentViewMode): Promise<void> {
+  await AsyncStorage.setItem(KEYS.viewMode, mode);
 }

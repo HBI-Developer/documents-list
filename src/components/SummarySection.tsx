@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useCurrencies } from "../context/CurrenciesContext";
 import { useDeductions } from "../context/DeductionsContext";
 import { useDocuments } from "../context/DocumentsContext";
@@ -15,27 +9,33 @@ import { spacing } from "../theme/spacing";
 import {
   convertToCurrency,
   formatAmount,
-  getTotalAmountPrimary,
+  getGrossTotal,
+  getManualBlockedTotal,
   getTotalPages,
 } from "../utils/calculations";
+import { AdjustTotalDialog } from "./AdjustTotalDialog";
 
 interface SummarySectionProps {
-  onOpenCurrencySettings: () => void;
-  onOpenDeductions: () => void;
-  onExportPdf?: () => void;
+  readonly onOpenCurrencySettings: () => void;
+  readonly onOpenDeductions: () => void;
+  readonly onOpenDatabase?: () => void;
+  readonly onExportPdf?: () => void;
 }
 
 export function SummarySection({
   onOpenCurrencySettings,
   onOpenDeductions,
+  onOpenDatabase,
   onExportPdf,
 }: SummarySectionProps) {
-  const { documents } = useDocuments();
+  const { documents, adjustGrossTotal } = useDocuments();
   const { additionalCurrencies } = useCurrencies();
   const { deductions } = useDeductions();
   const { primaryCurrencyName } = useSettings();
 
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showAdjustTotal, setShowAdjustTotal] = useState(false);
+  const [adjustError, setAdjustError] = useState<string | null>(null);
   const slideAnim = useRef(new Animated.Value(300)).current; // Start off-screen to the right
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -65,15 +65,28 @@ export function SummarySection({
           useNativeDriver: true,
         }).start(() => setShowTooltip(false));
       }, 5000);
-    } else {
-      if (onExportPdf) onExportPdf();
+    } else if (onExportPdf) {
+      onExportPdf();
     }
   };
 
   const totalPages = getTotalPages(documents);
-  const totalAmountPrimary = getTotalAmountPrimary(documents);
+  // Total = full document values; net drops with manual blocks + deductions.
+  const grossTotal = getGrossTotal(documents);
   const totalDeductions = deductions.reduce((s, d) => s + d.amount, 0);
-  const netAmount = Math.max(0, totalAmountPrimary - totalDeductions);
+  const netAmount = Math.max(0, grossTotal - getManualBlockedTotal(documents) - totalDeductions);
+
+  const handleAdjustTotalConfirm = async (newTotal: number) => {
+    const applied = await adjustGrossTotal(newTotal);
+    if (applied === 0) {
+      setAdjustError(
+        "تعذر التوزيع — لا توجد مستندات قابلة للتعديل (مستندات الضرب بعدد صفحات صفر لا تقبل التوزيع).",
+      );
+      return;
+    }
+    setAdjustError(null);
+    setShowAdjustTotal(false);
+  };
 
   return (
     <View style={styles.container}>
@@ -83,16 +96,23 @@ export function SummarySection({
       </View>
       <View style={styles.row}>
         <Text style={styles.label}>الإجمالي ({primaryCurrencyName})</Text>
-        <Text style={styles.valueAmount}>
-          {formatAmount(totalAmountPrimary)}
-        </Text>
+        <TouchableOpacity
+          onPress={() => {
+            if (documents.length === 0) return;
+            setAdjustError(null);
+            setShowAdjustTotal(true);
+          }}
+          disabled={documents.length === 0}
+          accessibilityRole="button"
+          accessibilityLabel="تعديل الإجمالي"
+        >
+          <Text style={styles.valueAmount}>{formatAmount(grossTotal)} — إدارة</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.row}>
         <Text style={styles.label}>الخصومات</Text>
         <TouchableOpacity onPress={onOpenDeductions}>
-          <Text style={styles.deductionsLink}>
-            {formatAmount(totalDeductions)} — إدارة
-          </Text>
+          <Text style={styles.deductionsLink}>{formatAmount(totalDeductions)} — إدارة</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.row}>
@@ -112,17 +132,16 @@ export function SummarySection({
         </View>
       )}
       <View style={styles.footerButtons}>
-        <TouchableOpacity
-          style={styles.footerBtn}
-          onPress={onOpenCurrencySettings}
-        >
+        <TouchableOpacity style={styles.footerBtn} onPress={onOpenCurrencySettings}>
           <Text style={styles.currencyButtonText}>إعداد العملات</Text>
         </TouchableOpacity>
+        {onOpenDatabase && (
+          <TouchableOpacity style={styles.footerBtn} onPress={onOpenDatabase}>
+            <Text style={styles.currencyButtonText}>قاعدة البيانات</Text>
+          </TouchableOpacity>
+        )}
         {onExportPdf && (
-          <TouchableOpacity
-            style={styles.footerBtn}
-            onPress={handleExportPress}
-          >
+          <TouchableOpacity style={styles.footerBtn} onPress={handleExportPress}>
             <Text style={styles.currencyButtonText}>تصدير PDF</Text>
           </TouchableOpacity>
         )}
@@ -130,16 +149,21 @@ export function SummarySection({
 
       {showTooltip && (
         <Animated.View
-          style={[
-            styles.tooltipContainer,
-            { transform: [{ translateX: slideAnim }] },
-          ]}
+          style={[styles.tooltipContainer, { transform: [{ translateX: slideAnim }] }]}
         >
-          <Text style={styles.tooltipText}>
-            يجب إضافة مستند واحد على الأقل للتصدير
-          </Text>
+          <Text style={styles.tooltipText}>يجب إضافة مستند واحد على الأقل للتصدير</Text>
         </Animated.View>
       )}
+      <AdjustTotalDialog
+        visible={showAdjustTotal}
+        grossTotal={grossTotal}
+        applyError={adjustError}
+        onConfirm={handleAdjustTotalConfirm}
+        onCancel={() => {
+          setAdjustError(null);
+          setShowAdjustTotal(false);
+        }}
+      />
     </View>
   );
 }
@@ -181,6 +205,7 @@ const styles = StyleSheet.create({
   currencyValue: { fontSize: 14, color: colors.text },
   footerButtons: {
     flexDirection: "row",
+    direction: "rtl",
     marginTop: spacing.md,
     gap: spacing.md,
     flexWrap: "wrap",

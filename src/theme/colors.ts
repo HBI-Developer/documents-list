@@ -22,6 +22,8 @@ export const colors = {
   fabPressed: "#4f46e5",
   cardDisabled: "#1e293b",
   cardDisabledBorder: "#334155",
+  cardPartialDisabled: "#252a45",
+  cardPartialDisabledBorder: "#4c5178",
   placeholder: "#888888",
 } as const;
 

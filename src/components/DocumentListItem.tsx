@@ -1,3 +1,4 @@
+import Ionicons from "@react-native-vector-icons/ionicons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -12,7 +13,9 @@ import {
 import { formatDateDisplay } from "../utils/date";
 import { getToggleLabel } from "../utils/toggleLabel";
 
-interface DocumentCardProps {
+const ICON_SIZE = 14;
+
+interface DocumentListItemProps {
   readonly document: DocumentItem;
   readonly serialNumber: number;
   /** Deduction-driven auto-block allocation (from grid). */
@@ -24,7 +27,7 @@ interface DocumentCardProps {
   readonly onToggleSelect?: () => void;
 }
 
-export function DocumentCard({
+export function DocumentListItem({
   document,
   serialNumber,
   allocation = new Map(),
@@ -33,7 +36,7 @@ export function DocumentCard({
   onToggleDisabled,
   selected,
   onToggleSelect,
-}: DocumentCardProps) {
+}: DocumentListItemProps) {
   const amount = getDocumentAmount(document);
   const isFull = isFullyBlocked(document, allocation);
   const isPartial = isPartiallyBlocked(document, allocation);
@@ -44,10 +47,10 @@ export function DocumentCard({
   return (
     <View
       style={[
-        styles.card,
-        isFull && styles.cardDisabled,
-        isPartial && styles.cardPartial,
-        selected && styles.cardSelected,
+        styles.row,
+        isFull && styles.rowDisabled,
+        isPartial && styles.rowPartial,
+        selected && styles.rowSelected,
       ]}
     >
       {onToggleSelect && (
@@ -55,36 +58,51 @@ export function DocumentCard({
           style={styles.checkbox}
           onPress={onToggleSelect}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: selected }}
+          accessibilityLabel="تحديد المستند"
         >
           <View style={[styles.checkboxInner, selected && styles.checkboxSelected]} />
         </TouchableOpacity>
       )}
       <View style={styles.content}>
-        <Text style={[styles.serial, showDisabledStyles && styles.textDisabled]}>
-          #{serialNumber}
-        </Text>
-        <Text style={[styles.name, isFull && styles.nameDisabled]} numberOfLines={2}>
-          {document.name || "—"}
-        </Text>
-        <Text style={[styles.meta, showDisabledStyles && styles.textDisabled]}>
-          {formatDateDisplay(document.date)}
-        </Text>
-        <Text style={[styles.meta, showDisabledStyles && styles.textDisabled]}>
-          {document.numberOfPages} صفحة
-        </Text>
-        <Text style={[styles.amount, isFull && styles.textDisabled]}>{formatAmount(amount)}</Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.serial, showDisabledStyles && styles.textDisabled]}>
+            #{serialNumber}
+          </Text>
+          <Text style={[styles.name, isFull && styles.nameDisabled]} numberOfLines={1}>
+            {document.name || "—"}
+          </Text>
+        </View>
+        <View style={styles.metaRow}>
+          <Text style={[styles.meta, showDisabledStyles && styles.textDisabled]}>
+            {formatDateDisplay(document.date)} • {document.numberOfPages} صفحة
+          </Text>
+          <Text style={[styles.amount, isFull && styles.textDisabled]}>{formatAmount(amount)}</Text>
+        </View>
       </View>
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={onEdit}>
-          <Text style={styles.actionText}>تعديل</Text>
+        <TouchableOpacity
+          style={styles.iconBtn}
+          onPress={onEdit}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="تعديل"
+        >
+          <Ionicons name="pencil-outline" size={ICON_SIZE} color={colors.text} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={styles.iconBtn}
           onPress={onToggleDisabled}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={toggleLabel}
         >
-          <Text style={styles.actionText}>{showDisabledStyles ? "تفعيل" : "تعطيل"}</Text>
+          <Ionicons
+            name={showDisabledStyles ? "eye-outline" : "eye-off-outline"}
+            size={ICON_SIZE}
+            color={colors.text}
+          />
           {isPartial && (
             <View style={styles.remainingBadge}>
               <Text style={styles.remainingBadgeText} numberOfLines={1}>
@@ -93,45 +111,48 @@ export function DocumentCard({
             </View>
           )}
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={onDelete}>
-          <Text style={styles.actionText}>حذف</Text>
+        <TouchableOpacity
+          style={[styles.iconBtn, styles.deleteBtn]}
+          onPress={onDelete}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="حذف"
+        >
+          <Ionicons name="trash-outline" size={ICON_SIZE} color={colors.error} />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const deleteBtnBg = colors.errorAlpha;
-
 const styles = StyleSheet.create({
-  card: {
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: 12,
-    padding: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    flex: 1,
-    minWidth: "45%",
-    maxWidth: "48%",
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
-  cardDisabled: {
+  rowDisabled: {
     backgroundColor: colors.cardDisabled,
     borderColor: colors.cardDisabledBorder,
     opacity: 0.85,
   },
-  cardPartial: {
+  rowPartial: {
     backgroundColor: colors.cardPartialDisabled,
     borderColor: colors.cardPartialDisabledBorder,
   },
-  cardSelected: {
+  rowSelected: {
     borderColor: colors.primary,
     borderWidth: 2,
   },
   checkbox: {
-    position: "absolute",
-    top: spacing.sm,
-    left: spacing.sm,
-    zIndex: 1,
+    padding: spacing.xs,
   },
   checkboxInner: {
     width: 22,
@@ -145,27 +166,56 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
-  content: { marginTop: spacing.sm },
-  serial: { fontSize: 12, color: colors.textSecondary, marginBottom: 2 },
+  content: {
+    flex: 1,
+    minWidth: 0,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: spacing.sm,
+  },
+  serial: { fontSize: 12, color: colors.textSecondary },
   name: {
     fontSize: 15,
     fontWeight: "600",
     color: colors.text,
-    marginBottom: 4,
+    flex: 1,
   },
-  meta: { fontSize: 13, color: colors.textSecondary, marginBottom: 2 },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    marginTop: 2,
+  },
+  meta: { fontSize: 13, color: colors.textSecondary, flexShrink: 1 },
   amount: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: colors.primary,
-    marginTop: 4,
   },
   nameDisabled: { textDecorationLine: "line-through", color: colors.disabled },
   textDisabled: { color: colors.textMuted },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    flexShrink: 0,
+  },
+  iconBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceElevated,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteBtn: { backgroundColor: colors.errorAlpha },
   remainingBadge: {
     position: "absolute",
     top: -9,
-    right: -6,
+    right: -8,
     backgroundColor: colors.primary,
     borderRadius: 8,
     paddingHorizontal: 5,
@@ -173,18 +223,4 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   remainingBadgeText: { fontSize: 8, fontWeight: "700", color: "#fff" },
-  actions: {
-    flexDirection: "row",
-    marginTop: spacing.sm,
-    gap: spacing.xs,
-    flexWrap: "wrap",
-  },
-  actionBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 6,
-  },
-  deleteBtn: { backgroundColor: deleteBtnBg },
-  actionText: { fontSize: 12, color: colors.text },
 });

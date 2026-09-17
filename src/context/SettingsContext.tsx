@@ -1,11 +1,5 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import * as store from "../storage/store";
 
 const defaultPrimary = "د.ع";
@@ -19,11 +13,9 @@ const SettingsContext = createContext<{
   load: () => Promise<void>;
 } | null>(null);
 
-export function SettingsProvider({ children }: { children: React.ReactNode }) {
+export function SettingsProvider({ children }: { readonly children: React.ReactNode }) {
   const [primaryCurrencyName, setPrimary] = useState<string>(defaultPrimary);
-  const [lastCalculationMethod, setLastCalc] = useState<"multiply" | "fixed">(
-    defaultLastCalc
-  );
+  const [lastCalculationMethod, setLastCalc] = useState<"multiply" | "fixed">(defaultLastCalc);
 
   const load = useCallback(async () => {
     const s = await store.getSettings();
@@ -36,11 +28,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setPrimary(name);
       await store.setSettings({
         primaryCurrencyName: name,
-        lastCalculationMethod:
-          lastCalculationMethod === "fixed" ? "fixed" : "multiply",
+        lastCalculationMethod: lastCalculationMethod === "fixed" ? "fixed" : "multiply",
       });
     },
-    [lastCalculationMethod]
+    [lastCalculationMethod],
   );
 
   const setLastCalculationMethod = useCallback(
@@ -51,7 +42,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         lastCalculationMethod: method,
       });
     },
-    [primaryCurrencyName]
+    [primaryCurrencyName],
   );
 
   useEffect(() => {
@@ -72,14 +63,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       lastCalculationMethod,
       setLastCalculationMethod,
       load,
-    ]
+    ],
   );
 
-  return (
-    <SettingsContext.Provider value={value}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettings() {

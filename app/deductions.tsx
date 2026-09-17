@@ -1,39 +1,49 @@
-import { useDeductions } from "@/src/context/DeductionsContext";
-import { useSettings } from "@/src/context/SettingsContext";
-import { DeductionItem } from "@/src/storage/store";
-import { colors } from "@/src/theme/colors";
-import { spacing } from "@/src/theme/spacing";
 import { useCallback, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDeductions } from "@/src/context/DeductionsContext";
+import { useDocuments } from "@/src/context/DocumentsContext";
+import { useSettings } from "@/src/context/SettingsContext";
+import type { DeductionItem } from "@/src/storage/store";
+import { colors } from "@/src/theme/colors";
+import { spacing } from "@/src/theme/spacing";
+import { formatAmount, getDeductionCapacity } from "@/src/utils/calculations";
 
 export default function DeductionsScreen() {
   const insets = useSafeAreaInsets();
   const { primaryCurrencyName } = useSettings();
-  const { deductions, addDeduction, updateDeduction, deleteDeduction } =
-    useDeductions();
+  const { deductions, addDeduction, updateDeduction, deleteDeduction } = useDeductions();
+  const { documents } = useDocuments();
+
+  // Free amount deductions may still occupy: gross − manual blocks − pool.
+  const capacity = getDeductionCapacity(documents);
+  const pool = deductions.reduce((s, d) => s + (d.amount || 0), 0);
+  const net = Math.max(0, capacity - pool);
 
   const [newAmount, setNewAmount] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
 
   const handleAdd = useCallback(async () => {
-    const amount = parseFloat(newAmount);
-    if (!Number.isFinite(amount) || amount < 0) {
-      Alert.alert("خطأ", "يرجى إدخال مبلغ صحيح");
+    const amount = Number.parseFloat(newAmount);
+    if (!Number.isFinite(amount) || amount < 1 || amount > net) {
+      Alert.alert(
+        "خطأ",
+        net < 1 ? "لا يوجد مبلغ متاح للخصم" : `يرجى إدخال مبلغ بين 1 و ${formatAmount(net)}`,
+      );
       return;
     }
     await addDeduction(amount);
     setNewAmount("");
-  }, [newAmount, addDeduction]);
+  }, [newAmount, net, addDeduction]);
 
   const startEdit = useCallback((d: DeductionItem) => {
     setEditingId(d.id);
@@ -47,11 +57,16 @@ export default function DeductionsScreen() {
 
   const handleSaveEdit = useCallback(async () => {
     if (!editingId) return;
-    const amount = parseFloat(editAmount);
-    if (!Number.isFinite(amount) || amount < 0) return;
+    const own = deductions.find((d) => d.id === editingId)?.amount || 0;
+    const maxEdit = net + own;
+    const amount = Number.parseFloat(editAmount);
+    if (!Number.isFinite(amount) || amount < 1 || amount > maxEdit) {
+      Alert.alert("خطأ", `يرجى إدخال مبلغ بين 1 و ${formatAmount(maxEdit)}`);
+      return;
+    }
     await updateDeduction(editingId, amount);
     cancelEdit();
-  }, [editingId, editAmount, updateDeduction, cancelEdit]);
+  }, [editingId, editAmount, deductions, net, updateDeduction, cancelEdit]);
 
   const handleDelete = useCallback(
     (id: string) => {
@@ -64,20 +79,18 @@ export default function DeductionsScreen() {
         },
       ]);
     },
-    [deleteDeduction]
+    [deleteDeduction],
   );
 
   return (
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 20 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
       >
         <Text style={styles.hint}>
-          تُخصم مبالغ الخصومات من الإجمالي في قسم الملخص. المبلغ بالعملة الأساسية ({primaryCurrencyName}).
+          تُخصم مبالغ الخصومات من الإجمالي في قسم الملخص. المبلغ بالعملة الأساسية (
+          {primaryCurrencyName}).
         </Text>
 
         {deductions.map((d) => (
@@ -104,7 +117,9 @@ export default function DeductionsScreen() {
               </>
             ) : (
               <>
-                <Text style={styles.amountText}>{d.amount} {primaryCurrencyName}</Text>
+                <Text style={styles.amountText}>
+                  {d.amount} {primaryCurrencyName}
+                </Text>
                 <View style={styles.rowActions}>
                   <TouchableOpacity style={styles.smallBtn} onPress={() => startEdit(d)}>
                     <Text style={styles.smallBtnText}>تعديل</Text>
@@ -120,6 +135,9 @@ export default function DeductionsScreen() {
 
         <View style={styles.addSection}>
           <Text style={styles.label}>إضافة خصم جديد</Text>
+          <Text style={styles.availableText}>
+            المتاح للخصم: {formatAmount(net)} {primaryCurrencyName}
+          </Text>
           <TextInput
             style={styles.input}
             value={newAmount}
@@ -128,7 +146,11 @@ export default function DeductionsScreen() {
             placeholder={`المبلغ بـ ${primaryCurrencyName}`}
             placeholderTextColor={colors.placeholder}
           />
-          <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
+          <TouchableOpacity
+            style={[styles.addBtn, net < 1 && styles.addBtnDisabled]}
+            onPress={handleAdd}
+            disabled={net < 1}
+          >
             <Text style={styles.addBtnText}>+ إضافة خصم</Text>
           </TouchableOpacity>
         </View>
@@ -149,6 +171,12 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   label: { fontSize: 14, color: colors.textSecondary, marginBottom: 8 },
+  availableText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 8,
+    textAlign: "right",
+  },
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -208,5 +236,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
+  addBtnDisabled: { opacity: 0.5 },
   addBtnText: { fontSize: 16, color: "#fff", fontWeight: "600" },
 });

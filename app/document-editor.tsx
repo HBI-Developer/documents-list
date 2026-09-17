@@ -1,25 +1,32 @@
-import { DocumentInput, useDocuments } from "@/src/context/DocumentsContext";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import Ionicons from "@react-native-vector-icons/ionicons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { type DocumentInput, useDocuments } from "@/src/context/DocumentsContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors } from "@/src/theme/colors";
 import { spacing } from "@/src/theme/spacing";
 import { formatAmount } from "@/src/utils/calculations";
 import { todayISO } from "@/src/utils/date";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-    Animated,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+function formatDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 export default function DocumentEditorScreen() {
   const router = useRouter();
@@ -36,9 +43,9 @@ export default function DocumentEditorScreen() {
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [numberOfPages, setNumberOfPages] = useState("");
-  const [calculationMethod, setCalculationMethod] = useState<
-    "multiply" | "fixed"
-  >(lastCalculationMethod);
+  const [calculationMethod, setCalculationMethod] = useState<"multiply" | "fixed">(
+    lastCalculationMethod,
+  );
   const [valuePerPage, setValuePerPage] = useState("10");
   const [fixedAmount, setFixedAmount] = useState("");
 
@@ -53,28 +60,33 @@ export default function DocumentEditorScreen() {
   const bannerSlide = useRef(new Animated.Value(-120)).current;
   const bannerTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showValidationBanner = useCallback((errors: string[]) => {
-    if (bannerTimeout.current) clearTimeout(bannerTimeout.current);
-    setValidationErrors(errors);
-    setShowBanner(true);
-    bannerSlide.setValue(-120);
-    Animated.spring(bannerSlide, {
-      toValue: 0,
-      useNativeDriver: true,
-      tension: 80,
-      friction: 10,
-    }).start();
-    bannerTimeout.current = setTimeout(() => {
-      Animated.timing(bannerSlide, {
-        toValue: -120,
-        duration: 300,
+  const showValidationBanner = useCallback(
+    (errors: string[]) => {
+      if (bannerTimeout.current) clearTimeout(bannerTimeout.current);
+      setValidationErrors(errors);
+      setShowBanner(true);
+      bannerSlide.setValue(-120);
+      Animated.spring(bannerSlide, {
+        toValue: 0,
         useNativeDriver: true,
-      }).start(() => setShowBanner(false));
-    }, 4000);
-  }, [bannerSlide]);
+        tension: 80,
+        friction: 10,
+      }).start();
+      bannerTimeout.current = setTimeout(() => {
+        Animated.timing(bannerSlide, {
+          toValue: -120,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => setShowBanner(false));
+      }, 4000);
+    },
+    [bannerSlide],
+  );
 
   useEffect(() => {
-    return () => { if (bannerTimeout.current) clearTimeout(bannerTimeout.current); };
+    return () => {
+      if (bannerTimeout.current) clearTimeout(bannerTimeout.current);
+    };
   }, []);
 
   const validateFields = useCallback((): string[] => {
@@ -86,18 +98,6 @@ export default function DocumentEditorScreen() {
     if (calculationMethod === "fixed" && !fixedAmount.trim()) errors.push("المبلغ الثابت");
     return errors;
   }, [order, name, numberOfPages, calculationMethod, valuePerPage, fixedAmount]);
-
-  const resetForm = useCallback((keepDate: boolean = false) => {
-    setOrder(String(documents.length + 1));
-    setName("");
-    if (!keepDate) {
-      setDate(new Date());
-    }
-    setNumberOfPages("");
-    setCalculationMethod(lastCalculationMethod);
-    setValuePerPage("10");
-    setFixedAmount("");
-  }, [documents.length, lastCalculationMethod]);
 
   useEffect(() => {
     if (editDocument) {
@@ -119,26 +119,23 @@ export default function DocumentEditorScreen() {
   const valuePerPageNum = Number(valuePerPage) || 0;
   const fixedAmountNum = Number(fixedAmount) || 0;
   const previewAmount =
-    calculationMethod === "multiply"
-      ? valuePerPageNum * pagesNum
-      : fixedAmountNum;
+    calculationMethod === "multiply" ? valuePerPageNum * pagesNum : fixedAmountNum;
 
-  const onDateChange = (_event: any, selectedDate?: Date) => {
+  const onDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setDate(selectedDate);
     }
   };
 
-  const formatDate = (d: Date) => {
-    return d.toISOString().split("T")[0];
-  };
-
   const submit = useCallback(async () => {
     const errors = validateFields();
-    if (errors.length > 0) { showValidationBanner(errors); return; }
+    if (errors.length > 0) {
+      showValidationBanner(errors);
+      return;
+    }
 
-    const orderNum = Math.max(1, parseInt(order, 10) || 1);
+    const orderNum = Math.max(1, Number.parseInt(order, 10) || 1);
     const input: DocumentInput = {
       order: orderNum,
       name: name.trim(),
@@ -168,18 +165,20 @@ export default function DocumentEditorScreen() {
     addDocument,
     updateDocument,
     setLastCalculationMethod,
+    validateFields,
+    showValidationBanner,
     router,
   ]);
 
   const maxPossibleOrder = isEdit ? documents.length : documents.length + 1;
 
   const handleOrderChange = (val: string) => {
-    const num = parseInt(val, 10);
+    const num = Number.parseInt(val, 10);
     if (val === "") {
       setOrder("");
       return;
     }
-    if (!isNaN(num)) {
+    if (!Number.isNaN(num)) {
       if (num > maxPossibleOrder) {
         setOrder(String(maxPossibleOrder));
       } else {
@@ -196,9 +195,12 @@ export default function DocumentEditorScreen() {
 
   const submitAndContinue = useCallback(async () => {
     const errors = validateFields();
-    if (errors.length > 0) { showValidationBanner(errors); return; }
+    if (errors.length > 0) {
+      showValidationBanner(errors);
+      return;
+    }
 
-    const orderNum = Math.max(1, parseInt(order, 10) || 1);
+    const orderNum = Math.max(1, Number.parseInt(order, 10) || 1);
     const input: DocumentInput = {
       order: orderNum,
       name: name.trim(),
@@ -210,10 +212,14 @@ export default function DocumentEditorScreen() {
     };
     await addDocument(input);
     await setLastCalculationMethod(calculationMethod);
-    
-    // Reset form but increment order for the next one
-    resetForm(true);
-    setOrder(String(documents.length + 2)); 
+
+    // Reset for next entry: next order = old length + 2 (stale length is pre-add).
+    const nextOrder = String(documents.length + 2);
+    setName("");
+    setNumberOfPages("");
+    setFixedAmount("");
+    setValuePerPage("10");
+    setOrder(nextOrder);
     setTimeout(() => nameRef.current?.focus(), 100);
   }, [
     order,
@@ -225,7 +231,8 @@ export default function DocumentEditorScreen() {
     fixedAmountNum,
     addDocument,
     setLastCalculationMethod,
-    resetForm,
+    validateFields,
+    showValidationBanner,
     documents.length,
   ]);
 
@@ -234,10 +241,7 @@ export default function DocumentEditorScreen() {
       {/* Validation banner — slides down from top */}
       {showBanner && (
         <Animated.View
-          style={[
-            styles.validationBanner,
-            { transform: [{ translateY: bannerSlide }] },
-          ]}
+          style={[styles.validationBanner, { transform: [{ translateY: bannerSlide }] }]}
           pointerEvents="none"
         >
           <View style={styles.validationBannerHeader}>
@@ -260,10 +264,7 @@ export default function DocumentEditorScreen() {
       >
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: insets.bottom + 100 },
-          ]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.label}>الترتيب</Text>
@@ -292,20 +293,12 @@ export default function DocumentEditorScreen() {
           />
 
           <Text style={styles.label}>التاريخ</Text>
-          <TouchableOpacity
-            style={styles.dateSelector}
-            onPress={() => setShowDatePicker(true)}
-          >
+          <TouchableOpacity style={styles.dateSelector} onPress={() => setShowDatePicker(true)}>
             <Text style={styles.dateText}>{formatDate(date)}</Text>
           </TouchableOpacity>
 
           {showDatePicker && (
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display="default"
-              onChange={onDateChange}
-            />
+            <DateTimePicker value={date} mode="date" display="default" onChange={onDateChange} />
           )}
 
           <Text style={styles.label}>عدد الصفحات</Text>
@@ -328,10 +321,7 @@ export default function DocumentEditorScreen() {
           <Text style={styles.label}>طريقة الحساب</Text>
           <View style={styles.radioRow}>
             <TouchableOpacity
-              style={[
-                styles.radioBtn,
-                calculationMethod === "multiply" && styles.radioBtnActive,
-              ]}
+              style={[styles.radioBtn, calculationMethod === "multiply" && styles.radioBtnActive]}
               onPress={() => setCalculationMethod("multiply")}
             >
               <Text
@@ -344,17 +334,11 @@ export default function DocumentEditorScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.radioBtn,
-                calculationMethod === "fixed" && styles.radioBtnActive,
-              ]}
+              style={[styles.radioBtn, calculationMethod === "fixed" && styles.radioBtnActive]}
               onPress={() => setCalculationMethod("fixed")}
             >
               <Text
-                style={[
-                  styles.radioText,
-                  calculationMethod === "fixed" && styles.radioTextActive,
-                ]}
+                style={[styles.radioText, calculationMethod === "fixed" && styles.radioTextActive]}
               >
                 مبلغ ثابت
               </Text>
@@ -399,12 +383,7 @@ export default function DocumentEditorScreen() {
           </View>
         </ScrollView>
 
-        <View
-          style={[
-            styles.footer,
-            { paddingBottom: Math.max(spacing.lg, insets.bottom + 12) },
-          ]}
-        >
+        <View style={[styles.footer, { paddingBottom: Math.max(spacing.lg, insets.bottom + 12) }]}>
           {isEdit ? (
             <TouchableOpacity style={styles.primaryBtn} onPress={submit}>
               <Text style={styles.primaryBtnText}>حفظ التعديلات</Text>

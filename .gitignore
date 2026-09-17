@@ -8,36 +8,69 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+.eas/
 
-# Native
+# Environment & Secret Files
+.env
+.env.*
+!.env.example
+*.env
+secrets.json
+secret.json
+credentials.json
+service-account*.json
+
+# Mobile Credentials, Keystores & Keys
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
+*.pfx
 *.key
+*.pem
+*.crt
+*.cer
+*.der
 *.mobileprovision
+google-services.json
+GoogleService-Info.plist
 
 # Metro
 .metro-health-check*
 
-# debug
+# Debug logs
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
 
-# macOS
+# OS metadata
 .DS_Store
-*.pem
+Thumbs.db
 
-# local env files
-.env*.local
+# IDE & Editor settings
+.idea/
 
-# typescript
+# TypeScript
 *.tsbuildinfo
+
+# Test, Analysis & Mutation Artifacts
+.stryker-tmp/
+reports/
+coverage/
+.scannerwork/
+sonar-report*.txt
+
+# Local Database Files
+*.sqlite
+*.sqlite3
+*.db
 
 app-example
 
-# generated native folders
+# Generated native folders
 /ios
 /android
+

@@ -1,12 +1,6 @@
 import { nanoid } from "nanoid";
-import React, {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import * as store from "../storage/store";
 import type { CurrencyItem } from "../utils/calculations";
 
@@ -24,22 +18,18 @@ const CurrenciesContext = createContext<{
   load: () => Promise<void>;
 } | null>(null);
 
-export function CurrenciesProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function CurrenciesProvider({ children }: { readonly children: React.ReactNode }) {
   const [additionalCurrencies, setList] = useState<CurrencyItem[]>([]);
 
   const load = useCallback(async () => {
     const raw = await store.getCurrencies();
-    const list = (raw as any[]).filter(
-      (c) => c && typeof c.id === "string" && typeof c.name === "string"
-    ).map(c => ({
-      ...c,
-      rateToPrimary: typeof c.rateToPrimary === "number" ? c.rateToPrimary : 1,
-      conversionOp: c.conversionOp || "divide"
-    })) as CurrencyItem[];
+    const list = (raw as Record<string, unknown>[])
+      .filter((c) => c && typeof c.id === "string" && typeof c.name === "string")
+      .map((c) => ({
+        ...c,
+        rateToPrimary: typeof c.rateToPrimary === "number" ? c.rateToPrimary : 1,
+        conversionOp: c.conversionOp || "divide",
+      })) as CurrencyItem[];
     setList(list);
   }, []);
 
@@ -61,7 +51,7 @@ export function CurrenciesProvider({
       ];
       await persist(list);
     },
-    [additionalCurrencies, persist]
+    [additionalCurrencies, persist],
   );
 
   const updateCurrency = useCallback(
@@ -74,11 +64,11 @@ export function CurrenciesProvider({
               rateToPrimary: input.rateToPrimary,
               conversionOp: input.conversionOp,
             }
-          : c
+          : c,
       );
       await persist(list);
     },
-    [additionalCurrencies, persist]
+    [additionalCurrencies, persist],
   );
 
   const deleteCurrency = useCallback(
@@ -86,7 +76,7 @@ export function CurrenciesProvider({
       const list = additionalCurrencies.filter((c) => c.id !== id);
       await persist(list);
     },
-    [additionalCurrencies, persist]
+    [additionalCurrencies, persist],
   );
 
   useEffect(() => {
@@ -101,19 +91,14 @@ export function CurrenciesProvider({
       deleteCurrency,
       load,
     }),
-    [additionalCurrencies, addCurrency, updateCurrency, deleteCurrency, load]
+    [additionalCurrencies, addCurrency, updateCurrency, deleteCurrency, load],
   );
 
-  return (
-    <CurrenciesContext.Provider value={value}>
-      {children}
-    </CurrenciesContext.Provider>
-  );
+  return <CurrenciesContext.Provider value={value}>{children}</CurrenciesContext.Provider>;
 }
 
 export function useCurrencies() {
   const ctx = useContext(CurrenciesContext);
-  if (!ctx)
-    throw new Error("useCurrencies must be used within CurrenciesProvider");
+  if (!ctx) throw new Error("useCurrencies must be used within CurrenciesProvider");
   return ctx;
 }

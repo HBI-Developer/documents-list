@@ -1,4 +1,18 @@
 allowBuilds:
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@expo/cli@57.0.25'
+  - '@expo/router-server@57.0.10'
+  - babel-preset-expo@57.0.12
+  - expo@57.0.23
+  - expo-sharing@57.0.20
 onlyBuiltDependencies:
   - unrs-resolver
+# Snyk-driven transitive patches (build-time only, expo CLI toolchain)
+overrides:
+  browserslist: 4.28.7
+  js-yaml: 4.3.2
+  compression: 1.8.2
+  brace-expansion: 5.0.9
+  "@xmldom/xmldom@0.8.x": 0.8.15
+  "@xmldom/xmldom@0.9.x": 0.9.12

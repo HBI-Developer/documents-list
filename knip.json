@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@6.35.1/schema.json",
+  "entry": ["app/**/*.{ts,tsx}", "scripts/**/*.js"],
+  "project": ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}", "scripts/**/*.js"],
+  "expo": true,
+  "ignoreDependencies": ["expo-updates", "@vitest/coverage-v8"],
+  "ignoreIssues": {
+    "src/context/DocumentsContext.tsx": ["exports"],
+    "src/utils/calculations.ts": ["exports", "types"],
+    "src/utils/databaseBackup.ts": ["exports", "types"],
+    "src/utils/date.ts": ["exports"],
+    "src/theme/colors.ts": ["types"]
+  }
+}

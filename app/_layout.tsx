@@ -1,18 +1,29 @@
-import { DarkTheme, ThemeProvider } from "@react-navigation/native";
+import "react-native-get-random-values";
 import { Stack } from "expo-router";
+import { DarkTheme, ThemeProvider } from "expo-router/react-navigation";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
+import { useEffect } from "react";
 import { I18nManager } from "react-native";
 import "react-native-reanimated";
 
+import { DeductionCapacityGuard } from "@/src/components/DeductionCapacityGuard";
 import { CurrenciesProvider } from "@/src/context/CurrenciesContext";
 import { DeductionsProvider } from "@/src/context/DeductionsContext";
 import { DocumentsProvider } from "@/src/context/DocumentsContext";
 import { SettingsProvider } from "@/src/context/SettingsContext";
 
-if (!I18nManager.isRTL) {
-  I18nManager.allowRTL(true);
-  I18nManager.forceRTL(true);
+try {
+  if (!I18nManager.isRTL) {
+    I18nManager.allowRTL(true);
+    I18nManager.forceRTL(true);
+  }
+} catch {
+  // RTL forcing is best-effort (e.g. web) — screens already lay out RTL explicitly.
 }
+
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const AppDarkTheme = {
   ...DarkTheme,
@@ -27,18 +38,28 @@ const AppDarkTheme = {
 };
 
 export default function RootLayout() {
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync("#0f0f1a").catch(() => {});
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
   return (
     <SettingsProvider>
       <CurrenciesProvider>
         <DeductionsProvider>
           <DocumentsProvider>
+            <DeductionCapacityGuard />
             <ThemeProvider value={AppDarkTheme}>
-              <Stack>
+              <Stack
+                screenOptions={{
+                  contentStyle: { backgroundColor: "#0f0f1a" },
+                  headerStyle: { backgroundColor: "#1a1a2e" },
+                  headerTintColor: "#e2e8f0",
+                  headerTitleStyle: { color: "#e2e8f0" },
+                }}
+              >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="document-details"
-                  options={{ title: "تفاصيل المستندات" }}
-                />
+                <Stack.Screen name="document-details" options={{ title: "تفاصيل المستندات" }} />
                 <Stack.Screen
                   name="document-editor"
                   options={{ presentation: "modal", title: "محرر المستند" }}
@@ -56,8 +77,8 @@ export default function RootLayout() {
                   options={{ presentation: "modal", title: "تصدير PDF" }}
                 />
                 <Stack.Screen
-                  name="modal"
-                  options={{ presentation: "modal", title: "Modal" }}
+                  name="database"
+                  options={{ presentation: "modal", title: "قاعدة البيانات" }}
                 />
               </Stack>
               <StatusBar style="light" />

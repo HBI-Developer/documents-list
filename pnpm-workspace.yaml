@@ -1,5 +1,7 @@
 allowBuilds:
   unrs-resolver: true
+  esbuild: true
+  snyk: true
 minimumReleaseAgeExclude:
   - '@expo/cli@57.0.25'
   - '@expo/router-server@57.0.10'
@@ -8,6 +10,8 @@ minimumReleaseAgeExclude:
   - expo-sharing@57.0.20
 onlyBuiltDependencies:
   - unrs-resolver
+  - esbuild
+  - snyk
 # Snyk-driven transitive patches (build-time only, expo CLI toolchain)
 overrides:
   browserslist: 4.28.7
